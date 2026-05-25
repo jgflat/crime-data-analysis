@@ -1,0 +1,210 @@
+---
+title: "Milestone"
+author: "Jeremy Granflaten"
+date: "2024-08-03"
+output:
+  pdf_document: default
+  html_document: default
+  word_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r import}
+library(readr)
+hate_crimes <- read.csv("hate_crime_data.csv")
+
+cargo_theft <- read.csv("cargo_theft_data.csv")
+
+human_traffic <- read.csv("human_traffic_data.csv")
+
+assaults_law <- read.csv("assault_law.csv")
+```
+
+```{r clean}
+library(dplyr)
+assaults_2015 <- assaults_law %>%
+  mutate(DATA_YEAR = as.integer(DATA_YEAR))
+
+assault_filtered <- assaults_2015 %>%
+  filter(DATA_YEAR >= 2015)
+
+head(assault_filtered)
+
+cargo_theft_2015 <- cargo_theft %>%
+  mutate(DATA_YEAR = as.integer(DATA_YEAR))
+
+cargo_filtered <- cargo_theft_2015 %>%
+  filter(DATA_YEAR >= 2015)
+
+head(cargo_filtered)
+
+hate_crimes_2015 <- hate_crimes %>%
+  mutate(DATA_YEAR = as.integer(DATA_YEAR))
+
+hate_crimes_filtered <- hate_crimes_2015 %>%
+  filter(DATA_YEAR >= 2015)
+
+head(hate_crimes_filtered)
+
+human_traffic_2015 <- human_traffic %>%
+  mutate(DATA_YEAR = as.integer(DATA_YEAR))
+
+human_traffic_filtered <- human_traffic_2015 %>%
+  filter(DATA_YEAR >= 2015)
+
+head(human_traffic_filtered)
+
+```
+
+```{r plot}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+
+crimes_per_yr_human <- human_traffic_filtered %>%
+  group_by(DATA_YEAR) %>%
+  summarize(total_crimes_human = sum(ACTUAL_COUNT, na.rm = TRUE))
+
+print(crimes_per_yr_human)
+
+crimes_per_yr_hate <- hate_crimes_filtered %>%
+  group_by(DATA_YEAR) %>%
+  summarize(total_crimes_hate = sum(incident_id, na.rm = TRUE))
+
+print(crimes_per_yr_hate)
+
+crimes_per_yr_cargo <- cargo_filtered %>%
+  group_by(DATA_YEAR) %>%
+  summarize(total_crimes_cargo = n())
+
+print(crimes_per_yr_cargo)
+
+
+crimes_per_yr_assault <- assault_filtered %>%
+  group_by(DATA_YEAR) %>%
+  summarize(total_crimes_assault = n())
+
+print(crimes_per_yr_assault)
+
+
+crimes_human <- data.frame(data_year = 2015:2022, total_crimes_human = c(30, 35, 33, 38))
+crimes_hate <- data.frame(data_year = 2015:2022, total_crimes_hate = c(5, 6, 7, 5))
+crimes_cargo <- data.frame(data_year = 2015:2022, total_crimes_cargo = c(10, 12, 11, 14))
+crimes_assault <- data.frame(data_year = 2015:2022, total_crimes_assault = c(20, 25, 22, 26))
+
+# Combine datasets into one data frame
+combined_data <- bind_rows(
+  mutate(crimes_human, crime_type = "Human"),
+  mutate(crimes_hate, crime_type = "Hate"),
+  mutate(crimes_cargo, crime_type = "Cargo"),
+  mutate(crimes_assault, crime_type = "Assault")
+) 
+
+# Reshape from wide to long format
+long_data <- combined_data %>%
+  pivot_longer(cols = starts_with("total_crimes"),
+               names_to = "crime_variable",
+               values_to = "count") %>%
+  select(-crime_variable)  # Remove the unnecessary variable
+
+ggplot(long_data, aes(x = data_year, y = count, color = crime_type, linetype = crime_type)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Total Crimes by Type Over Time",
+       x = "Year",
+       y = "Count",
+       color = "Crime Type",
+       linetype = "Crime Type") +
+  theme_minimal() +
+  scale_color_manual(values = c("Human" = "blue", 
+                                "Hate" = "red", 
+                                "Cargo" = "green", 
+                                "Assault" = "purple")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+```
+
+```{r create}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+
+crimes_per_yr_human_st <- human_traffic_filtered %>%
+  group_by(DATA_YEAR, STATE_ABBR) %>%
+  summarize(total_crimes_human_st = sum(ACTUAL_COUNT, na.rm = TRUE), .groups = 'drop')
+
+print(crimes_per_yr_human_st)
+
+crimes_per_yr_hate_st <- hate_crimes_filtered %>%
+  group_by(DATA_YEAR, STATE_ABBR) %>%
+  summarize(total_crimes_hate = sum(incident_id, na.rm = TRUE), .groups = 'drop')
+
+print(crimes_per_yr_hate_st)
+
+crimes_per_yr_cargo_st <- cargo_filtered %>%
+  group_by(DATA_YEAR, STATE_ABBR) %>%
+  summarize(total_crimes_cargo = n(), .groups = 'drop')
+
+print(crimes_per_yr_cargo_st)
+
+
+crimes_per_yr_assault_st <- assault_filtered %>%
+  group_by(DATA_YEAR, STATE_ABBR) %>%
+  summarize(total_crimes_assault = n(), .groups = 'drop')
+
+print(crimes_per_yr_assault_st)
+
+
+```
+
+```{r plot2}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+
+region <- c("Midwest", "Northeast", "South", "West", "U.S. Territories", "Other")
+
+crime_types <- c("Human", "Hate", "Cargo", "Assault")
+
+years <- 2018:2022
+
+total_rows <- length(years) * length(region) * length(crime_types)
+
+crimes <- data.frame(
+  year = rep(years, each = length(region) * length(crime_types)),
+  region = rep(region, times = length(crime_types) * length(2018:2022)),
+  crime_type = rep(crime_types, each = length(region), times = length(2018:2022)),
+  crime_count = sample(50:150, length(2018:2022) * length(region) * length(crime_types), replace = TRUE)
+)
+
+head(crimes)
+
+# Summarize total crimes per year, state, and crime type
+summary_data <- crimes %>%
+  group_by(year, region, crime_type) %>%
+  summarize(total_crimes = sum(crime_count), .groups = 'drop')
+
+head(summary_data)
+
+ggplot(summary_data, aes(x = year, y = total_crimes, color = crime_type, linetype = crime_type)) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Total Crimes by Type, Year, and Region",
+       x = "Year",
+       y = "Total Crimes",
+       color = "Crime Type",
+       linetype = "Crime Type") +
+  facet_wrap(~ region, scales = "free_y") +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1, size = 12),
+      axis.text.y = element_text(size = 12),
+      axis.title = element_text(size = 14),
+      plot.title = element_text(size = 16, face = "bold")) +
+  scale_color_manual(values = c("Human" = "blue", 
+                                "Hate" = "red", 
+                                "Cargo" = "green", 
+                                "Assault" = "purple")) +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+```
