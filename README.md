@@ -18,6 +18,7 @@ The project uses four datasets:
 - Assault Law Data
 
 Each dataset contains yearly crime records and state-level information.
+Note: Most datasets used in this project are too large to be uploaded to GitHub. Only the Human Trafficking dataset is included in this repository. The remaining datasets must be downloaded separately and placed in the same local directory used in the R Markdown file.
 
 ---
 
